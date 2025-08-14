@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulated OPC UA Demo</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Optimized OPC UA Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -12,7 +11,7 @@
             background-color: #f0f4f8;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Align to top for better content flow */
+            align-items: flex-start;
             min-height: 100vh;
             padding: 20px;
             box-sizing: border-box;
@@ -30,7 +29,7 @@
         }
         @media (min-width: 768px) {
             .container {
-                grid-template-columns: 1fr 1fr; /* Two columns on medium screens and up */
+                grid-template-columns: 1fr 1fr;
             }
         }
         .section {
@@ -55,12 +54,16 @@
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
         .btn-primary {
             background-color: #3b82f6;
             color: white;
             border: none;
         }
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background-color: #2563eb;
             transform: translateY(-2px);
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
@@ -70,10 +73,18 @@
             color: white;
             border: none;
         }
-        .btn-secondary:hover {
+        .btn-secondary:hover:not(:disabled) {
             background-color: #475569;
             transform: translateY(-2px);
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        .btn-red {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+        }
+        .btn-red:hover:not(:disabled) {
+            background-color: #dc2626;
         }
         .input-field {
             padding: 10px 15px;
@@ -93,7 +104,7 @@
             border-radius: 8px;
             margin-top: 20px;
             font-size: 0.9rem;
-            word-wrap: break-word; /* Ensure long messages wrap */
+            word-wrap: break-word;
         }
         .error-message {
             background-color: #fee2e2;
@@ -126,13 +137,13 @@
             background-color: #e2e8f0;
             padding: 4px 8px;
             border-radius: 6px;
-            margin-left: 10px; /* Space between value and timestamp */
+            margin-left: 10px;
         }
         .node-timestamp {
             font-family: 'Courier New', Courier, monospace;
             font-size: 0.85em;
             color: #64748b;
-            margin-left: auto; /* Push timestamp to the right */
+            margin-left: auto;
         }
         .browse-tree ul {
             list-style: none;
@@ -147,8 +158,12 @@
             cursor: pointer;
             display: flex;
             align-items: center;
+            padding: 3px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
         }
-        .browse-tree .node-name:hover {
+        .browse-tree .node-name:hover, .browse-tree .node-name.selected {
+            background-color: #e2e8f0;
             color: #3b82f6;
         }
         .browse-tree .node-type {
@@ -163,6 +178,7 @@
             margin-left: 15px;
             font-family: 'Courier New', Courier, monospace;
             color: #475569;
+            font-size: 0.85em;
         }
         .browse-tree .toggle-icon {
             margin-right: 5px;
@@ -183,11 +199,27 @@
             margin-bottom: 20px;
             font-size: 0.9rem;
         }
+        #subscription-log {
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none; /* Initially hidden */
+        }
+        .subscription-entry {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8em;
+            padding: 4px 0;
+            border-bottom: 1px dashed #e0f2fe;
+            color: #0c4a6e;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Server Simulation Section -->
         <div class="section col-span-1">
             <h2 class="section-title">Simulated OPC UA Server</h2>
             <div class="mb-4">
@@ -198,25 +230,21 @@
                 Server Status: Running
             </div>
             <div class="space-y-3" id="server-nodes-display">
-                <!-- Server node values will be displayed here -->
-            </div>
+                </div>
         </div>
 
-        <!-- Client Simulation Section -->
         <div class="section col-span-1">
             <h2 class="section-title">OPC UA Client Simulation</h2>
             <div class="mb-4">
                 <p class="text-gray-700">Interact with the simulated server from this client interface.</p>
             </div>
 
-            <!-- Local Time Information -->
             <div id="local-time-info" class="mb-6">
                 <h3 class="font-semibold text-lg text-gray-800 mb-2">Your Local Time</h3>
                 <p id="current-local-time" class="font-mono text-gray-700"></p>
                 <p id="local-utc-offset" class="font-mono text-gray-700"></p>
             </div>
 
-            <!-- Connection -->
             <div class="mb-6 pb-4 border-b border-gray-200">
                 <h3 class="font-semibold text-lg text-gray-800 mb-3">Connection</h3>
                 <div id="client-connection-status" class="p-3 rounded-lg bg-red-100 text-red-800 border border-red-300">
@@ -226,16 +254,13 @@
                 <button id="disconnect-btn" class="btn btn-secondary mt-4 ml-2" disabled>Disconnect</button>
             </div>
 
-            <!-- Browse Address Space -->
             <div class="mb-6 pb-4 border-b border-gray-200">
                 <h3 class="font-semibold text-lg text-gray-800 mb-3">Browse Address Space</h3>
                 <div id="address-space-tree" class="browse-tree bg-white p-4 rounded-lg border border-gray-200 min-h-[150px] max-h-[300px] overflow-y-auto">
-                    <!-- Address space tree will be rendered here -->
                     <p class="text-gray-500 text-center py-4">Connect to server to browse.</p>
                 </div>
             </div>
 
-            <!-- Read/Write Node -->
             <div>
                 <h3 class="font-semibold text-lg text-gray-800 mb-3">Read/Write Node</h3>
                 <div class="mb-3">
@@ -253,512 +278,506 @@
                 <button id="write-btn" class="btn btn-primary w-full" disabled>Write Value</button>
 
                 <div id="client-message-box" class="message-box hidden">
-                    <!-- Client messages will appear here -->
+                    </div>
+
+                <div id="subscription-log" class="mt-4">
+                    <h4 class="font-semibold text-base mb-2 text-gray-800">Subscription Log: <span id="subscribed-node-id" class="font-mono text-blue-600"></span></h4>
+                    <div id="subscription-entries" class="bg-white p-3 rounded-md border border-blue-200 max-h-[150px] overflow-y-auto text-gray-600">
+                        <p class="text-gray-500 text-center text-sm py-4">No active subscription data.</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Helper function to get current UTC timestamp in ISO format
-        function getUtcTimestamp() {
-            return new Date().toISOString();
-        }
+        (function() {
+            "use strict";
 
-        // Helper function to format a UTC timestamp to local time string
-        function formatUtcToLocalTime(utcTimestamp) {
-            const date = new Date(utcTimestamp);
-            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-        }
-
-        // Helper function to get the local time offset from UTC
-        function getLocalUtcOffset() {
-            const now = new Date();
-            const offsetMinutes = now.getTimezoneOffset(); // Returns difference in minutes between UTC and local time
-            const offsetHours = -offsetMinutes / 60; // Convert to hours and invert sign for UTC+/- format
-
-            if (offsetHours === 0) {
-                return "UTC+0";
-            } else if (offsetHours > 0) {
-                return `UTC+${offsetHours}`;
-            } else {
-                return `UTC${offsetHours}`;
+            // --- Helper Functions ---
+            function getUtcTimestamp() {
+                return new Date().toISOString();
             }
-        }
 
-        // Simulated OPC UA Server
-        class SimulatedOpcUaServer {
-            constructor() {
-                this.addressSpace = {
-                    'ns=0;i=84': { // Root Node (Objects Folder)
-                        browseName: 'Objects',
-                        nodeId: 'ns=0;i=84',
-                        nodeClass: 'Object',
-                        children: {
-                            'ns=1;s=Folder1': {
-                                browseName: 'MyDevices',
-                                nodeId: 'ns=1;s=Folder1',
-                                nodeClass: 'Object',
-                                children: {
-                                    'ns=1;s=Temperature': {
-                                        browseName: 'Temperature',
-                                        nodeId: 'ns=1;s=Temperature',
-                                        nodeClass: 'Variable',
-                                        dataType: 'Float',
-                                        value: 25.5,
-                                        accessLevel: 'ReadWrite',
-                                        timestamp: getUtcTimestamp() // Initial timestamp
-                                    },
-                                    'ns=1;s=Pressure': {
-                                        browseName: 'Pressure',
-                                        nodeId: 'ns=1;s=Pressure',
-                                        nodeClass: 'Variable',
-                                        dataType: 'Float',
-                                        value: 101.2,
-                                        accessLevel: 'ReadWrite',
-                                        timestamp: getUtcTimestamp() // Initial timestamp
-                                    },
-                                    'ns=1;s=Status': {
-                                        browseName: 'Status',
-                                        nodeId: 'ns=1;s=Status',
-                                        nodeClass: 'Variable',
-                                        dataType: 'Boolean',
-                                        value: true,
-                                        accessLevel: 'ReadOnly',
-                                        timestamp: getUtcTimestamp() // Initial timestamp
-                                    },
-                                    'ns=1;s=DeviceName': {
-                                        browseName: 'DeviceName',
-                                        nodeId: 'ns=1;s=DeviceName',
-                                        nodeClass: 'Variable',
-                                        dataType: 'String',
-                                        value: 'SensorUnit-A',
-                                        accessLevel: 'ReadOnly',
-                                        timestamp: getUtcTimestamp() // Initial timestamp
+            function formatUtcToLocalTime(utcTimestamp) {
+                const date = new Date(utcTimestamp);
+                return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            }
+
+            function getLocalUtcOffset() {
+                const now = new Date();
+                const offsetMinutes = now.getTimezoneOffset();
+                const offsetHours = -offsetMinutes / 60;
+                if (offsetHours === 0) return "UTC+0";
+                return `UTC${offsetHours > 0 ? '+' : ''}${offsetHours}`;
+            }
+
+            // --- Simulated OPC UA Server Class ---
+            class SimulatedOpcUaServer {
+                constructor() {
+                    this.addressSpace = {
+                        'ns=0;i=84': {
+                            browseName: 'Objects',
+                            nodeId: 'ns=0;i=84',
+                            nodeClass: 'Object',
+                            children: {
+                                'ns=1;s=Folder1': {
+                                    browseName: 'MyDevices',
+                                    nodeId: 'ns=1;s=Folder1',
+                                    nodeClass: 'Object',
+                                    children: {
+                                        'ns=1;s=Temperature': {
+                                            browseName: 'Temperature',
+                                            nodeId: 'ns=1;s=Temperature',
+                                            nodeClass: 'Variable',
+                                            dataType: 'Float',
+                                            value: 25.5,
+                                            accessLevel: 'ReadWrite',
+                                            timestamp: getUtcTimestamp()
+                                        },
+                                        'ns=1;s=Pressure': {
+                                            browseName: 'Pressure',
+                                            nodeId: 'ns=1;s=Pressure',
+                                            nodeClass: 'Variable',
+                                            dataType: 'Float',
+                                            value: 101.2,
+                                            accessLevel: 'ReadWrite',
+                                            timestamp: getUtcTimestamp()
+                                        },
+                                        'ns=1;s=Status': {
+                                            browseName: 'Status',
+                                            nodeId: 'ns=1;s=Status',
+                                            nodeClass: 'Variable',
+                                            dataType: 'Boolean',
+                                            value: true,
+                                            accessLevel: 'ReadOnly',
+                                            timestamp: getUtcTimestamp()
+                                        },
+                                        'ns=1;s=DeviceName': {
+                                            browseName: 'DeviceName',
+                                            nodeId: 'ns=1;s=DeviceName',
+                                            nodeClass: 'Variable',
+                                            dataType: 'String',
+                                            value: 'SensorUnit-A',
+                                            accessLevel: 'ReadOnly',
+                                            timestamp: getUtcTimestamp()
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                };
-                this.subscriptions = {}; // Simulated subscriptions: nodeId -> callback
-                this.updateInterval = null;
-            }
-
-            // Helper to get a node by its NodeId from the address space
-            _getNode(nodeId, currentSpace = this.addressSpace) {
-                if (currentSpace[nodeId]) {
-                    return currentSpace[nodeId];
-                }
-                for (const key in currentSpace) {
-                    if (currentSpace[key].children) {
-                        const found = this._getNode(nodeId, currentSpace[key].children);
-                        if (found) return found;
-                    }
-                }
-                return null;
-            }
-
-            // Simulates reading a node's value
-            readNode(nodeId) {
-                const node = this._getNode(nodeId);
-                if (node && node.nodeClass === 'Variable') {
-                    return {
-                        value: node.value,
-                        dataType: node.dataType,
-                        accessLevel: node.accessLevel,
-                        timestamp: node.timestamp // Include timestamp
                     };
+                    this.subscriptions = {};
+                    this.updateInterval = null;
                 }
-                return null;
-            }
 
-            // Simulates writing a node's value
-            writeNode(nodeId, newValue) {
-                const node = this._getNode(nodeId);
-                if (node && node.nodeClass === 'Variable') {
-                    if (node.accessLevel === 'ReadWrite') {
-                        // Basic type conversion simulation
-                        let convertedValue = newValue;
+                findNode(nodeId, currentSpace = this.addressSpace) {
+                    if (currentSpace[nodeId]) {
+                        return currentSpace[nodeId];
+                    }
+                    for (const key in currentSpace) {
+                        if (currentSpace[key].children) {
+                            const found = this.findNode(nodeId, currentSpace[key].children);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                }
+
+                readNode(nodeId) {
+                    const node = this.findNode(nodeId);
+                    if (node && node.nodeClass === 'Variable') {
+                        return { value: node.value, dataType: node.dataType, accessLevel: node.accessLevel, timestamp: node.timestamp };
+                    }
+                    return null;
+                }
+
+                writeNode(nodeId, newValue) {
+                    const node = this.findNode(nodeId);
+                    if (!node || node.nodeClass !== 'Variable') {
+                        return { success: false, message: `Node '${nodeId}' not found or not a Variable.` };
+                    }
+                    if (node.accessLevel !== 'ReadWrite') {
+                        return { success: false, message: `Node '${node.browseName}' is ReadOnly.` };
+                    }
+
+                    let convertedValue;
+                    try {
                         switch (node.dataType) {
                             case 'Float':
                                 convertedValue = parseFloat(newValue);
-                                if (isNaN(convertedValue)) return { success: false, message: `Invalid float value for ${node.browseName}` };
+                                if (isNaN(convertedValue)) throw new Error(`Invalid float value.`);
                                 break;
                             case 'Boolean':
                                 convertedValue = (newValue.toLowerCase() === 'true' || newValue === '1');
                                 break;
-                            case 'Int':
-                                convertedValue = parseInt(newValue);
-                                if (isNaN(convertedValue)) return { success: false, message: `Invalid integer value for ${node.browseName}` };
+                            case 'String':
+                                convertedValue = String(newValue);
                                 break;
-                            // Add more type conversions as needed
+                            default:
+                                convertedValue = newValue;
                         }
-                        node.value = convertedValue;
-                        node.timestamp = getUtcTimestamp(); // Update timestamp on write
-                        // Notify subscribers if any
-                        if (this.subscriptions[nodeId]) {
-                            this.subscriptions[nodeId](node.value, node.timestamp); // Pass timestamp to subscriber
+                    } catch (e) {
+                        return { success: false, message: `${e.message} for ${node.dataType} type.` };
+                    }
+                    
+                    node.value = convertedValue;
+                    node.timestamp = getUtcTimestamp();
+                    if (this.subscriptions[nodeId]) {
+                        this.subscriptions[nodeId](node.value, node.timestamp);
+                    }
+                    return { success: true, message: `Value of ${node.browseName} updated to ${node.value}`, timestamp: node.timestamp, dataType: node.dataType };
+                }
+
+                browseNodes(parentNodeId = 'ns=0;i=84') {
+                    const parentNode = this.findNode(parentNodeId);
+                    if (parentNode && parentNode.children) {
+                        return Object.values(parentNode.children).map(node => ({
+                            nodeId: node.nodeId,
+                            browseName: node.browseName,
+                            nodeClass: node.nodeClass,
+                            dataType: node.dataType,
+                            hasChildren: Object.keys(node.children || {}).length > 0,
+                            value: node.value,
+                            timestamp: node.timestamp
+                        }));
+                    }
+                    return [];
+                }
+
+                subscribe(nodeId, callback) {
+                    const node = this.findNode(nodeId);
+                    if (node && node.nodeClass === 'Variable') {
+                        this.subscriptions[nodeId] = callback;
+                        return { success: true, message: `Subscribed to '${node.browseName}'.` };
+                    }
+                    return { success: false, message: `Cannot subscribe to '${nodeId}'. Not a Variable.` };
+                }
+
+                unsubscribe(nodeId) {
+                    if (this.subscriptions[nodeId]) {
+                        delete this.subscriptions[nodeId];
+                        return { success: true, message: `Unsubscribed from '${nodeId}'.` };
+                    }
+                    return { success: false, message: `No active subscription for '${nodeId}'.` };
+                }
+
+                startDataSimulation() {
+                    if (this.updateInterval) return;
+                    this.updateInterval = setInterval(() => {
+                        const tempNode = this.findNode('ns=1;s=Temperature');
+                        if (tempNode) {
+                            tempNode.value = (Math.random() * 10 + 20).toFixed(2);
+                            tempNode.timestamp = getUtcTimestamp();
+                            if (this.subscriptions['ns=1;s=Temperature']) {
+                                this.subscriptions['ns=1;s=Temperature'](tempNode.value, tempNode.timestamp);
+                            }
                         }
-                        return { success: true, message: `Value of ${node.browseName} updated to ${node.value}`, timestamp: node.timestamp };
-                    } else {
-                        return { success: false, message: `Node ${node.browseName} is ReadOnly.` };
+
+                        const pressureNode = this.findNode('ns=1;s=Pressure');
+                        if (pressureNode) {
+                            pressureNode.value = (Math.random() * 5 + 98).toFixed(2);
+                            pressureNode.timestamp = getUtcTimestamp();
+                            if (this.subscriptions['ns=1;s=Pressure']) {
+                                this.subscriptions['ns=1;s=Pressure'](pressureNode.value, pressureNode.timestamp);
+                            }
+                        }
+                        updateServerNodeDisplay();
+                        if (isConnected) renderAddressSpaceTree(addressSpaceTree, server.browseNodes());
+                    }, 2000);
+                }
+
+                stopDataSimulation() {
+                    if (this.updateInterval) {
+                        clearInterval(this.updateInterval);
+                        this.updateInterval = null;
                     }
                 }
-                return { success: false, message: `Node ${nodeId} not found or not a Variable.` };
             }
 
-            // Simulates browsing the address space
-            browseNodes(parentNodeId = 'ns=0;i=84') { // Default to root
-                const parentNode = this._getNode(parentNodeId);
-                if (parentNode && parentNode.children) {
-                    return Object.values(parentNode.children).map(node => ({
-                        nodeId: node.nodeId,
-                        browseName: node.browseName,
-                        nodeClass: node.nodeClass,
-                        dataType: node.dataType, // Only for variables
-                        hasChildren: Object.keys(node.children || {}).length > 0,
-                        timestamp: node.timestamp // Include timestamp for variables
-                    }));
-                }
-                return [];
-            }
+            // --- Global Instances and DOM Caching ---
+            const server = new SimulatedOpcUaServer();
+            let isConnected = false;
+            let subscribedNodeId = null;
 
-            // Simulates subscribing to a node for data changes
-            subscribe(nodeId, callback) {
-                const node = this._getNode(nodeId);
-                if (node && node.nodeClass === 'Variable') {
-                    this.subscriptions[nodeId] = callback;
-                    return { success: true, message: `Subscribed to ${node.browseName}.` };
-                }
-                return { success: false, message: `Cannot subscribe to ${nodeId}. Not a Variable.` };
-            }
+            const clientConnectionStatus = document.getElementById('client-connection-status');
+            const connectBtn = document.getElementById('connect-btn');
+            const disconnectBtn = document.getElementById('disconnect-btn');
+            const addressSpaceTree = document.getElementById('address-space-tree');
+            const nodeIdInput = document.getElementById('node-id-input');
+            const nodeValueInput = document.getElementById('node-value-input');
+            const readBtn = document.getElementById('read-btn');
+            const writeBtn = document.getElementById('write-btn');
+            const subscribeBtn = document.getElementById('subscribe-btn');
+            const clientMessageBox = document.getElementById('client-message-box');
+            const serverNodesDisplay = document.getElementById('server-nodes-display');
+            const currentLocalTimeDisplay = document.getElementById('current-local-time');
+            const localUtcOffsetDisplay = document.getElementById('local-utc-offset');
+            const subscriptionLogContainer = document.getElementById('subscription-log');
+            const subscriptionEntries = document.getElementById('subscription-entries');
+            const subscribedNodeIdDisplay = document.getElementById('subscribed-node-id');
 
-            // Simulates unsubscribing
-            unsubscribe(nodeId) {
-                if (this.subscriptions[nodeId]) {
-                    delete this.subscriptions[nodeId];
-                    return { success: true, message: `Unsubscribed from ${nodeId}.` };
-                }
-                return { success: false, message: `No active subscription for ${nodeId}.` };
-            }
 
-            // Starts simulating data changes
-            startDataSimulation() {
-                if (this.updateInterval) return; // Already running
-                this.updateInterval = setInterval(() => {
-                    // Simulate temperature change
-                    const tempNode = this._getNode('ns=1;s=Temperature');
-                    if (tempNode) {
-                        tempNode.value = (Math.random() * 10 + 20).toFixed(2); // 20.00 - 30.00
-                        tempNode.timestamp = getUtcTimestamp(); // Update timestamp
-                        if (this.subscriptions['ns=1;s=Temperature']) {
-                            this.subscriptions['ns=1;s=Temperature'](tempNode.value, tempNode.timestamp);
-                        }
-                    }
-
-                    // Simulate pressure change
-                    const pressureNode = this._getNode('ns=1;s=Pressure');
-                    if (pressureNode) {
-                        pressureNode.value = (Math.random() * 5 + 98).toFixed(2); // 98.00 - 103.00
-                        pressureNode.timestamp = getUtcTimestamp(); // Update timestamp
-                        if (this.subscriptions['ns=1;s=Pressure']) {
-                            this.subscriptions['ns=1;s=Pressure'](pressureNode.value, pressureNode.timestamp);
-                        }
-                    }
-
-                    // Update UI for server-side display
-                    updateServerNodeDisplay();
-
-                }, 2000); // Update every 2 seconds
-            }
-
-            stopDataSimulation() {
-                if (this.updateInterval) {
-                    clearInterval(this.updateInterval);
-                    this.updateInterval = null;
+            // --- UI Functions ---
+            function displayClientMessage(message, type = 'info', timeout = 5000) {
+                clientMessageBox.textContent = message;
+                clientMessageBox.className = 'message-box';
+                clientMessageBox.classList.remove('hidden');
+                if (type === 'error') clientMessageBox.classList.add('error-message');
+                else if (type === 'success') clientMessageBox.classList.add('success-message');
+                else if (type === 'info') clientMessageBox.classList.add('bg-blue-100', 'text-blue-800', 'border-blue-300');
+                
+                if (timeout) {
+                    setTimeout(() => clientMessageBox.classList.add('hidden'), timeout);
                 }
             }
-        }
 
-        // Global instances
-        const server = new SimulatedOpcUaServer();
-        let isConnected = false;
-
-        // --- DOM Elements ---
-        const clientConnectionStatus = document.getElementById('client-connection-status');
-        const connectBtn = document.getElementById('connect-btn');
-        const disconnectBtn = document.getElementById('disconnect-btn');
-        const addressSpaceTree = document.getElementById('address-space-tree');
-        const nodeIdInput = document.getElementById('node-id-input');
-        const nodeValueInput = document.getElementById('node-value-input');
-        const readBtn = document.getElementById('read-btn');
-        const writeBtn = document.getElementById('write-btn');
-        const subscribeBtn = document.getElementById('subscribe-btn');
-        const clientMessageBox = document.getElementById('client-message-box');
-        const serverNodesDisplay = document.getElementById('server-nodes-display');
-        const currentLocalTimeDisplay = document.getElementById('current-local-time');
-        const localUtcOffsetDisplay = document.getElementById('local-utc-offset');
-
-
-        // --- Helper Functions ---
-
-        // Displays a message in the client message box
-        function displayClientMessage(message, type = 'info') {
-            clientMessageBox.textContent = message;
-            clientMessageBox.className = 'message-box'; // Reset classes
-            clientMessageBox.classList.remove('hidden');
-            if (type === 'error') {
-                clientMessageBox.classList.add('error-message');
-            } else if (type === 'success') {
-                clientMessageBox.classList.add('success-message');
-            }
-            setTimeout(() => {
-                clientMessageBox.classList.add('hidden');
-            }, 5000); // Hide after 5 seconds
-        }
-
-        // Renders the address space tree
-        function renderAddressSpace(nodes, parentElement, level = 0) {
-            const ul = document.createElement('ul');
-            ul.classList.add(`level-${level}`);
-            if (level > 0) ul.style.display = 'none'; // Initially hide children
-
-            nodes.forEach(node => {
-                const li = document.createElement('li');
-                const nodeNameSpan = document.createElement('span');
-                nodeNameSpan.classList.add('node-name');
-                nodeNameSpan.textContent = node.browseName;
-                nodeNameSpan.dataset.nodeId = node.nodeId; // Store nodeId for click event
-
-                if (node.hasChildren) {
-                    const toggleIcon = document.createElement('span');
-                    toggleIcon.classList.add('toggle-icon');
-                    toggleIcon.innerHTML = '&#9658;'; // Right triangle for collapsed
-                    nodeNameSpan.prepend(toggleIcon);
-                    nodeNameSpan.onclick = (event) => {
-                        event.stopPropagation(); // Prevent parent click
-                        const childUl = li.querySelector(`ul.level-${level + 1}`);
-                        if (childUl) {
-                            const isHidden = childUl.style.display === 'none';
-                            childUl.style.display = isHidden ? 'block' : 'none';
-                            toggleIcon.classList.toggle('rotated', isHidden);
-                        }
-                    };
+            function updateClientButtons() {
+                connectBtn.disabled = isConnected;
+                disconnectBtn.disabled = !isConnected;
+                readBtn.disabled = !isConnected;
+                writeBtn.disabled = !isConnected;
+                subscribeBtn.disabled = !isConnected;
+                
+                if (subscribedNodeId) {
+                    subscribeBtn.textContent = 'Unsubscribe';
+                    subscribeBtn.classList.remove('btn-secondary');
+                    subscribeBtn.classList.add('btn-red');
                 } else {
-                    // For leaf nodes (variables), allow clicking to populate Node ID input
+                    subscribeBtn.textContent = 'Subscribe (Simulated)';
+                    subscribeBtn.classList.add('btn-secondary');
+                    subscribeBtn.classList.remove('btn-red');
+                }
+            }
+            
+            function renderAddressSpaceTree(parentElement, nodes, level = 0) {
+                const ul = document.createElement('ul');
+                ul.classList.add(`level-${level}`);
+                if (level > 0) ul.style.display = 'none';
+
+                nodes.forEach(node => {
+                    const li = document.createElement('li');
+                    const nodeNameSpan = document.createElement('span');
+                    nodeNameSpan.classList.add('node-name');
+                    nodeNameSpan.textContent = node.browseName;
+                    nodeNameSpan.dataset.nodeId = node.nodeId;
+
+                    // Click handler for all nodes
                     nodeNameSpan.onclick = (event) => {
                         event.stopPropagation();
+                        // Clear previous selection
+                        document.querySelectorAll('.browse-tree .node-name.selected').forEach(el => el.classList.remove('selected'));
+                        nodeNameSpan.classList.add('selected');
                         nodeIdInput.value = node.nodeId;
                         displayClientMessage(`Node ID '${node.nodeId}' selected.`, 'info');
+
+                        if (node.hasChildren) {
+                            const childUl = li.querySelector(`ul.level-${level + 1}`);
+                            if (childUl) {
+                                const isHidden = childUl.style.display === 'none';
+                                childUl.style.display = isHidden ? 'block' : 'none';
+                                const toggleIcon = nodeNameSpan.querySelector('.toggle-icon');
+                                if (toggleIcon) toggleIcon.classList.toggle('rotated', isHidden);
+                            }
+                        }
                     };
-                }
 
-                const nodeTypeSpan = document.createElement('span');
-                nodeTypeSpan.classList.add('node-type');
-                nodeTypeSpan.textContent = node.nodeClass;
-                nodeNameSpan.appendChild(nodeTypeSpan);
+                    if (node.hasChildren) {
+                        const toggleIcon = document.createElement('span');
+                        toggleIcon.classList.add('toggle-icon');
+                        toggleIcon.innerHTML = '&#9658;';
+                        nodeNameSpan.prepend(toggleIcon);
+                    }
 
-                li.appendChild(nodeNameSpan);
+                    const nodeTypeSpan = document.createElement('span');
+                    nodeTypeSpan.classList.add('node-type');
+                    nodeTypeSpan.textContent = node.nodeClass;
+                    nodeNameSpan.appendChild(nodeTypeSpan);
 
-                if (node.hasChildren) {
-                    const children = server.browseNodes(node.nodeId);
-                    renderAddressSpace(children, li, level + 1);
-                } else if (node.nodeClass === 'Variable') {
-                    // Display current value and timestamp for variables in the browser
-                    const nodeData = server.readNode(node.nodeId);
-                    if (nodeData) {
+                    li.appendChild(nodeNameSpan);
+
+                    if (node.nodeClass === 'Variable') {
                         const nodeValueTimestampDisplay = document.createElement('span');
                         nodeValueTimestampDisplay.classList.add('node-value-display');
-                        nodeValueTimestampDisplay.textContent = ` (Value: ${nodeData.value}, Type: ${nodeData.dataType}, UTC: ${new Date(nodeData.timestamp).toLocaleTimeString('en-US', { hour12: false, timeZone: 'UTC' })} | Local: ${formatUtcToLocalTime(nodeData.timestamp)})`;
+                        const utcTime = new Date(node.timestamp).toLocaleTimeString('en-US', { hour12: false, timeZone: 'UTC' });
+                        nodeValueTimestampDisplay.textContent = ` (Value: ${node.value}, Type: ${node.dataType}, UTC: ${utcTime})`;
                         li.appendChild(nodeValueTimestampDisplay);
                     }
-                }
 
-                ul.appendChild(li);
-            });
-            parentElement.appendChild(ul);
-        }
+                    if (node.hasChildren) {
+                        const children = server.browseNodes(node.nodeId);
+                        renderAddressSpaceTree(li, children, level + 1);
+                    }
+                    ul.appendChild(li);
+                });
+                parentElement.appendChild(ul);
+            }
 
-        // Updates the display of server node values
-        function updateServerNodeDisplay() {
-            serverNodesDisplay.innerHTML = ''; // Clear previous
-            const nodesToDisplay = ['ns=1;s=Temperature', 'ns=1;s=Pressure', 'ns=1;s=Status', 'ns=1;s=DeviceName'];
-            nodesToDisplay.forEach(nodeId => {
-                const node = server._getNode(nodeId);
-                if (node) {
-                    const div = document.createElement('div');
-                    div.classList.add('node-item');
-                    div.innerHTML = `
-                        <span class="node-id">${node.browseName} (${node.nodeId})</span>
-                        <span class="node-value">${node.value}</span>
-                        <span class="node-timestamp">${new Date(node.timestamp).toLocaleTimeString('en-US', { hour12: false, timeZone: 'UTC' })} UTC</span>
-                    `;
-                    serverNodesDisplay.appendChild(div);
-                }
-            });
-        }
+            function updateServerNodeDisplay() {
+                serverNodesDisplay.innerHTML = '';
+                const nodesToDisplay = ['ns=1;s=Temperature', 'ns=1;s=Pressure', 'ns=1;s=Status', 'ns=1;s=DeviceName'];
+                nodesToDisplay.forEach(nodeId => {
+                    const node = server.findNode(nodeId);
+                    if (node) {
+                        const div = document.createElement('div');
+                        div.classList.add('node-item');
+                        div.innerHTML = `
+                            <span class="node-id">${node.browseName}</span>
+                            <span class="node-value">${node.value}</span>
+                            <span class="node-timestamp">${new Date(node.timestamp).toLocaleTimeString('en-US', { hour12: false, timeZone: 'UTC' })} UTC</span>
+                        `;
+                        serverNodesDisplay.appendChild(div);
+                    }
+                });
+            }
 
-        // Update local time display
-        function updateLocalTimeDisplay() {
-            const now = new Date();
-            currentLocalTimeDisplay.textContent = `Current Local Time: ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })} ${now.toLocaleDateString()}`;
-            localUtcOffsetDisplay.textContent = `Your Offset: ${getLocalUtcOffset()}`;
-        }
+            function updateLocalTimeDisplay() {
+                const now = new Date();
+                currentLocalTimeDisplay.textContent = `Current Local Time: ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })} ${now.toLocaleDateString()}`;
+                localUtcOffsetDisplay.textContent = `Your Offset: ${getLocalUtcOffset()}`;
+            }
 
-        // --- Event Listeners ---
-
-        connectBtn.addEventListener('click', () => {
-            if (!isConnected) {
+            // --- Event Handlers ---
+            function handleConnect() {
+                if (isConnected) return;
                 isConnected = true;
                 clientConnectionStatus.textContent = 'Client Status: Connected';
                 clientConnectionStatus.classList.remove('bg-red-100', 'text-red-800', 'border-red-300');
                 clientConnectionStatus.classList.add('bg-green-100', 'text-green-800', 'border-green-300');
-                connectBtn.disabled = true;
-                disconnectBtn.disabled = false;
-                readBtn.disabled = false;
-                writeBtn.disabled = false;
-                subscribeBtn.disabled = false;
-
-                // Start server data simulation on client connect
+                
+                updateClientButtons();
                 server.startDataSimulation();
-                updateServerNodeDisplay(); // Initial update for server display
-
-                // Populate address space tree
-                addressSpaceTree.innerHTML = ''; // Clear previous content
+                updateServerNodeDisplay();
+                
+                addressSpaceTree.innerHTML = '';
                 const rootNodes = server.browseNodes();
-                renderAddressSpace(rootNodes, addressSpaceTree);
+                renderAddressSpaceTree(addressSpaceTree, rootNodes);
 
                 displayClientMessage('Successfully connected to simulated OPC UA Server.', 'success');
             }
-        });
 
-        disconnectBtn.addEventListener('click', () => {
-            if (isConnected) {
+            function handleDisconnect() {
+                if (!isConnected) return;
                 isConnected = false;
                 clientConnectionStatus.textContent = 'Client Status: Disconnected';
                 clientConnectionStatus.classList.remove('bg-green-100', 'text-green-800', 'border-green-300');
                 clientConnectionStatus.classList.add('bg-red-100', 'text-red-800', 'border-red-300');
-                connectBtn.disabled = false;
-                disconnectBtn.disabled = true;
-                readBtn.disabled = true;
-                writeBtn.disabled = true;
-                subscribeBtn.disabled = true;
 
-                // Stop server data simulation
+                // Clear any active subscriptions
+                if (subscribedNodeId) {
+                    server.unsubscribe(subscribedNodeId);
+                    subscribedNodeId = null;
+                }
+                subscriptionLogContainer.style.display = 'none';
+                subscriptionEntries.innerHTML = '<p class="text-gray-500 text-center text-sm py-4">No active subscription data.</p>';
+                
+                updateClientButtons();
                 server.stopDataSimulation();
-
-                // Clear address space tree
+                
                 addressSpaceTree.innerHTML = '<p class="text-gray-500 text-center py-4">Connect to server to browse.</p>';
-
                 displayClientMessage('Disconnected from simulated OPC UA Server.', 'info');
             }
-        });
 
-        readBtn.addEventListener('click', () => {
-            if (!isConnected) {
-                displayClientMessage('Client not connected to server.', 'error');
-                return;
-            }
-            const nodeId = nodeIdInput.value.trim();
-            if (!nodeId) {
-                displayClientMessage('Please enter a Node ID to read.', 'error');
-                return;
-            }
-
-            const result = server.readNode(nodeId);
-            if (result) {
-                const utcTime = new Date(result.timestamp).toLocaleTimeString('en-US', { hour12: false, timeZone: 'UTC' });
-                const localTime = formatUtcToLocalTime(result.timestamp);
-                const offset = getLocalUtcOffset();
-
-                displayClientMessage(`Read Node '${nodeId}': Value = ${result.value}, Data Type = ${result.dataType}, Access = ${result.accessLevel}, UTC Timestamp = ${utcTime} UTC, Local Timestamp = ${localTime} ${offset}`, 'success');
-            } else {
-                displayClientMessage(`Failed to read Node '${nodeId}'. Node not found or not a variable.`, 'error');
-            }
-        });
-
-        writeBtn.addEventListener('click', () => {
-            if (!isConnected) {
-                displayClientMessage('Client not connected to server.', 'error');
-                return;
-            }
-            const nodeId = nodeIdInput.value.trim();
-            const newValue = nodeValueInput.value.trim();
-
-            if (!nodeId) {
-                displayClientMessage('Please enter a Node ID to write.', 'error');
-                return;
-            }
-            if (!newValue) {
-                displayClientMessage('Please enter a value to write.', 'error');
-                return;
-            }
-
-            const result = server.writeNode(nodeId, newValue);
-            if (result.success) {
-                const utcTime = new Date(result.timestamp).toLocaleTimeString('en-US', { hour12: false, timeZone: 'UTC' });
-                const localTime = formatUtcToLocalTime(result.timestamp);
-                const offset = getLocalUtcOffset();
-                displayClientMessage(`${result.message}, UTC Timestamp = ${utcTime} UTC, Local Timestamp = ${localTime} ${offset}`, 'success');
-            } else {
-                displayClientMessage(`Failed to write to Node '${nodeId}': ${result.message}`, 'error');
-            }
-        });
-
-        let isSubscribed = false;
-        subscribeBtn.addEventListener('click', () => {
-            if (!isConnected) {
-                displayClientMessage('Client not connected to server.', 'error');
-                return;
-            }
-            const nodeId = nodeIdInput.value.trim();
-            if (!nodeId) {
-                displayClientMessage('Please enter a Node ID to subscribe.', 'error');
-                return;
-            }
-
-            if (!isSubscribed) {
-                // Simulate subscription
-                const result = server.subscribe(nodeId, (newValue, newTimestamp) => {
-                    const utcTime = new Date(newTimestamp).toLocaleTimeString('en-US', { hour12: false, timeZone: 'UTC' });
-                    const localTime = formatUtcToLocalTime(newTimestamp);
+            function handleRead() {
+                const nodeId = nodeIdInput.value.trim();
+                if (!nodeId) {
+                    displayClientMessage('Please enter a Node ID to read.', 'error');
+                    return;
+                }
+                const result = server.readNode(nodeId);
+                if (result) {
+                    const utcTime = new Date(result.timestamp).toLocaleTimeString('en-US', { hour12: false, timeZone: 'UTC' });
+                    const localTime = formatUtcToLocalTime(result.timestamp);
                     const offset = getLocalUtcOffset();
-                    displayClientMessage(`Subscription Update for '${nodeId}': New Value = ${newValue}, UTC Timestamp = ${utcTime} UTC, Local Timestamp = ${localTime} ${offset}`, 'info');
-                });
-
-                if (result.success) {
-                    isSubscribed = true;
-                    subscribeBtn.textContent = 'Unsubscribe';
-                    subscribeBtn.classList.remove('btn-secondary');
-                    subscribeBtn.classList.add('bg-red-500', 'hover:bg-red-600'); // Change color for unsubscribe
-                    displayClientMessage(result.message, 'success');
+                    displayClientMessage(`Read Node '${nodeId}': Value = ${result.value}, Type = ${result.dataType}, Access = ${result.accessLevel}, UTC Timestamp = ${utcTime} UTC, Local Timestamp = ${localTime} ${offset}`, 'success', 10000);
                 } else {
-                    displayClientMessage(`Subscription failed: ${result.message}`, 'error');
-                }
-            } else {
-                // Simulate unsubscribe
-                const result = server.unsubscribe(nodeId);
-                if (result.success) {
-                    isSubscribed = false;
-                    subscribeBtn.textContent = 'Subscribe (Simulated)';
-                    subscribeBtn.classList.add('btn-secondary');
-                    subscribeBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
-                    displayClientMessage(result.message, 'info');
-                } else {
-                    displayClientMessage(`Unsubscription failed: ${result.message}`, 'error');
+                    displayClientMessage(`Failed to read Node '${nodeId}'. Node not found or not a variable.`, 'error');
                 }
             }
-        });
 
-        // Initial setup and updates
-        window.onload = () => {
-            updateServerNodeDisplay();
-            server.startDataSimulation();
-            updateLocalTimeDisplay(); // Initial display of local time
-            setInterval(updateLocalTimeDisplay, 1000); // Update local time every second
-        };
+            function handleWrite() {
+                const nodeId = nodeIdInput.value.trim();
+                const newValue = nodeValueInput.value.trim();
+                if (!nodeId || !newValue) {
+                    displayClientMessage('Please enter both a Node ID and a value to write.', 'error');
+                    return;
+                }
+                const result = server.writeNode(nodeId, newValue);
+                if (result.success) {
+                    const utcTime = new Date(result.timestamp).toLocaleTimeString('en-US', { hour12: false, timeZone: 'UTC' });
+                    const localTime = formatUtcToLocalTime(result.timestamp);
+                    const offset = getLocalUtcOffset();
+                    displayClientMessage(`${result.message}, UTC Timestamp = ${utcTime} UTC, Local Timestamp = ${localTime} ${offset}`, 'success', 10000);
+                    nodeValueInput.value = '';
+                } else {
+                    displayClientMessage(`Failed to write to Node '${nodeId}': ${result.message}`, 'error');
+                }
+            }
 
+            function handleSubscribe() {
+                const nodeId = nodeIdInput.value.trim();
+                if (!nodeId) {
+                    displayClientMessage('Please enter a Node ID to subscribe.', 'error');
+                    return;
+                }
+
+                if (subscribedNodeId === nodeId) {
+                    // Unsubscribe from the current node
+                    const result = server.unsubscribe(nodeId);
+                    if (result.success) {
+                        subscribedNodeId = null;
+                        subscriptionLogContainer.style.display = 'none';
+                        subscriptionEntries.innerHTML = '<p class="text-gray-500 text-center text-sm py-4">No active subscription data.</p>';
+                        displayClientMessage(result.message, 'info');
+                    } else {
+                        displayClientMessage(`Unsubscription failed: ${result.message}`, 'error');
+                    }
+                } else {
+                    // Subscribe to a new node
+                    const result = server.subscribe(nodeId, (newValue, newTimestamp) => {
+                        const utcTime = new Date(newTimestamp).toLocaleTimeString('en-US', { hour12: false, timeZone: 'UTC' });
+                        const localTime = formatUtcToLocalTime(newTimestamp);
+                        const newEntry = document.createElement('div');
+                        newEntry.classList.add('subscription-entry');
+                        newEntry.textContent = `New Value: ${newValue} (UTC: ${utcTime} | Local: ${localTime})`;
+                        subscriptionEntries.prepend(newEntry); // Add to top of list
+                        if (subscriptionEntries.children.length > 10) {
+                            subscriptionEntries.removeChild(subscriptionEntries.lastElementChild);
+                        }
+                    });
+
+                    if (result.success) {
+                        subscribedNodeId = nodeId;
+                        subscriptionLogContainer.style.display = 'block';
+                        subscribedNodeIdDisplay.textContent = nodeId;
+                        subscriptionEntries.innerHTML = '';
+                        displayClientMessage(result.message, 'success');
+                    } else {
+                        displayClientMessage(`Subscription failed: ${result.message}`, 'error');
+                    }
+                }
+                updateClientButtons();
+            }
+
+            // --- Initialization ---
+            function init() {
+                // Attach event listeners
+                connectBtn.addEventListener('click', handleConnect);
+                disconnectBtn.addEventListener('click', handleDisconnect);
+                readBtn.addEventListener('click', handleRead);
+                writeBtn.addEventListener('click', handleWrite);
+                subscribeBtn.addEventListener('click', handleSubscribe);
+
+                // Initial UI state
+                updateServerNodeDisplay();
+                server.startDataSimulation();
+                updateLocalTimeDisplay();
+                setInterval(updateLocalTimeDisplay, 1000);
+            }
+
+            // Run the initialization function when the script loads
+            window.onload = init;
+        })();
     </script>
 </body>
 </html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimized OPC UA Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="section col-span-1">
+            <h2 class="section-title">Simulated OPC UA Server</h2>
+            <div class="mb-4">
+                <p class="text-gray-700">This section represents a simplified OPC UA server, exposing data points (nodes).</p>
+                <p class="text-gray-700">All timestamps on the server are in **UTC (UTC+0)** and update automatically.</p>
+            </div>
+            <div id="server-status" class="mb-4 p-3 rounded-lg bg-blue-100 text-blue-800 border border-blue-300">
+                Server Status: Running
+            </div>
+            <div class="space-y-3" id="server-nodes-display">
+                </div>
+        </div>
+
+        <div class="section col-span-1">
+            <h2 class="section-title">OPC UA Client Simulation</h2>
+            <div class="mb-4">
+                <p class="text-gray-700">Interact with the simulated server from this client interface.</p>
+            </div>
+
+            <div id="local-time-info" class="mb-6">
+                <h3 class="font-semibold text-lg text-gray-800 mb-2">Your Local Time</h3>
+                <p id="current-local-time" class="font-mono text-gray-700"></p>
+                <p id="local-utc-offset" class="font-mono text-gray-700"></p>
+            </div>
+
+            <div class="mb-6 pb-4 border-b border-gray-200">
+                <h3 class="font-semibold text-lg text-gray-800 mb-3">Connection</h3>
+                <div id="client-connection-status" class="p-3 rounded-lg bg-red-100 text-red-800 border border-red-300">
+                    Client Status: Disconnected
+                </div>
+                <button id="connect-btn" class="btn btn-primary mt-4">Connect to Server</button>
+                <button id="disconnect-btn" class="btn btn-secondary mt-4 ml-2" disabled>Disconnect</button>
+            </div>
+
+            <div class="mb-6 pb-4 border-b border-gray-200">
+                <h3 class="font-semibold text-lg text-gray-800 mb-3">Browse Address Space</h3>
+                <div id="address-space-tree" class="browse-tree bg-white p-4 rounded-lg border border-gray-200 min-h-[150px] max-h-[300px] overflow-y-auto">
+                    <p class="text-gray-500 text-center py-4">Connect to server to browse.</p>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="font-semibold text-lg text-gray-800 mb-3">Read/Write Node</h3>
+                <div class="mb-3">
+                    <label for="node-id-input" class="block text-sm font-medium text-gray-700 mb-1">Node ID (e.g., 'ns=1;s=Temperature'):</label>
+                    <input type="text" id="node-id-input" class="input-field" placeholder="Enter Node ID">
+                </div>
+                <div class="flex space-x-2 mb-4">
+                    <button id="read-btn" class="btn btn-primary w-1/2" disabled>Read Value</button>
+                    <button id="subscribe-btn" class="btn btn-secondary w-1/2" disabled>Subscribe (Simulated)</button>
+                </div>
+                <div class="mb-3">
+                    <label for="node-value-input" class="block text-sm font-medium text-gray-700 mb-1">New Value (for Write):</label>
+                    <input type="text" id="node-value-input" class="input-field" placeholder="Enter new value">
+                </div>
+                <button id="write-btn" class="btn btn-primary w-full" disabled>Write Value</button>
+
+                <div id="client-message-box" class="message-box hidden">
+                    </div>
+
+                <div id="subscription-log" class="mt-4">
+                    <h4 class="font-semibold text-base mb-2 text-gray-800">Subscription Log: <span id="subscribed-node-id" class="font-mono text-blue-600"></span></h4>
+                    <div id="subscription-entries" class="bg-white p-3 rounded-md border border-blue-200 max-h-[150px] overflow-y-auto text-gray-600">
+                        <p class="text-gray-500 text-center text-sm py-4">No active subscription data.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
